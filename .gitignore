@@ -42,5 +42,6 @@
 
 build/
 .vscode/
+文案/
 
 *.mp4

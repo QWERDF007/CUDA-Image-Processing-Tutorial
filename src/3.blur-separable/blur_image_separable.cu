@@ -45,14 +45,6 @@ __global__ void blur_image_kernel(uint8_t *src, uint8_t *dst, const int kw, cons
     dst[tid] = saturate_cast((float)sum / count);
 }
 
-void blur_image(uint8_t *d_src, uint8_t *d_dst, const int kw, const int kh, const int width, const int height)
-{
-    const int N = width * height;
-    dim3      block(THREADS);
-    dim3      grid((N + THREADS - 1) / THREADS);
-    blur_image_kernel<<<grid, block>>>(d_src, d_dst, kw, kh, width, height, N);
-}
-
 __global__ void blur_h_kernel(uint8_t *src, uint32_t *tmp, const int kw, const int W, const int H)
 {
     const int tid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -95,6 +87,14 @@ __global__ void blur_v_kernel(uint32_t *tmp, uint8_t *dst, const int kw, const i
     }
 
     dst[tid] = saturate_cast((float)sum / count);
+}
+
+void blur_image(uint8_t *d_src, uint8_t *d_dst, const int kw, const int kh, const int width, const int height)
+{
+    const int N = width * height;
+    dim3      block(THREADS);
+    dim3      grid((N + THREADS - 1) / THREADS);
+    blur_image_kernel<<<grid, block>>>(d_src, d_dst, kw, kh, width, height, N);
 }
 
 void blur_image_separable(uint8_t *d_src, uint8_t *d_dst, uint32_t *d_tmp, const int kw, const int kh, const int width,
