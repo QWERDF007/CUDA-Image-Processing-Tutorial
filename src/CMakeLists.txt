@@ -1,3 +1,4 @@
 add_subdirectory(1.blend)
 add_subdirectory(2.blur)
 add_subdirectory(3.blur-separable)
+add_subdirectory(4.morphology)
