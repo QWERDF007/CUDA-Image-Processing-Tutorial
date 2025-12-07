@@ -19,8 +19,8 @@ void addSaltPepperNoise(cv::Mat &src, double amount)
         int y = randY(gen);
         if (rand() % 2)
         {
-            src.at<uchar>(y, x) = 255; // 盐
-            // src.at<uchar>(y, x) = 0;   // 胡椒
+            // src.at<uchar>(y, x) = 255; // 盐
+            src.at<uchar>(y, x) = 0; // 胡椒
         }
     }
 }
@@ -59,39 +59,49 @@ int main(int argc, char *argv[])
     const int NK     = ksz * ksz;
 
     // 分配设备内存
-    uint8_t *d_src;
+    uint8_t *d_src, *d_tmp;
     uint8_t *d_kernel;
+    uint8_t *d_result;
     uint8_t *d_erode, *d_dilate;
+    uint8_t *d_open, *d_close;
     cudaMalloc(&d_src, N * sizeof(uint8_t));
     cudaMalloc(&d_kernel, NK * sizeof(uint8_t));
+    cudaMalloc(&d_tmp, N * sizeof(uint8_t));
+    cudaMalloc(&d_result, N * sizeof(uint8_t));
     cudaMalloc(&d_erode, N * sizeof(uint8_t));
     cudaMalloc(&d_dilate, N * sizeof(uint8_t));
+    cudaMalloc(&d_open, N * sizeof(uint8_t));
+    cudaMalloc(&d_close, N * sizeof(uint8_t));
 
     // 将数据拷贝到设备
     cudaMemcpy(d_src, src.data, N * sizeof(uint8_t), cudaMemcpyHostToDevice);
     cudaMemcpy(d_kernel, kernel.data, NK * sizeof(uint8_t), cudaMemcpyHostToDevice);
 
-    // 调用 CUDA 腐蚀、膨胀
-    erode(d_src, d_erode, d_kernel, ksz, width, height);
-    dilate(d_src, d_dilate, d_kernel, ksz, width, height);
+    // 调用 CUDA
+    // open(d_src, d_result, d_kernel, d_tmp, ksz, width, height);
+    // close(d_src, d_result, d_kernel, d_tmp, ksz, width, height);
+    // morphology_gradient(d_src, d_result, d_kernel, d_erode, d_dilate, ksz, width, height);
+    // tophat(d_src, d_result, d_kernel, d_tmp, d_open, ksz, width, height);
+    blackhat(d_src, d_result, d_kernel, d_tmp, d_close, ksz, width, height);
 
     // cudaDeviceSynchronize();
 
-    cv::Mat erode_result(height, width, CV_8UC1);
-    cv::Mat dilate_result(height, width, CV_8UC1);
+    cv::Mat result(height, width, CV_8UC1);
 
     // 拷贝结果
-    cudaMemcpy(erode_result.data, d_erode, N * sizeof(uint8_t), cudaMemcpyDeviceToHost);
-    cudaMemcpy(dilate_result.data, d_dilate, N * sizeof(uint8_t), cudaMemcpyDeviceToHost);
+    cudaMemcpy(result.data, d_result, N * sizeof(uint8_t), cudaMemcpyDeviceToHost);
 
     cv::imwrite("src.png", src);
-    cv::imwrite("erode.png", erode_result);
-    cv::imwrite("dilate.png", dilate_result);
+    cv::imwrite("res.png", result);
 
     cudaFree(d_src);
     cudaFree(d_kernel);
+    cudaFree(d_tmp);
+    cudaFree(d_result);
     cudaFree(d_erode);
     cudaFree(d_dilate);
+    cudaFree(d_open);
+    cudaFree(d_close);
 
     return 0;
 }
